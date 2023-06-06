@@ -1,0 +1,27 @@
+.App {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.messege-container  {
+  text-align: center;
+}
+
+.messege-container span {
+  font-size: 32px;
+  font-weight: bold;
+  user-select: none;
+  filter: brightness(70%);
+}
+
+.messege-container .sub{
+  font-size: 20px
+}
+
+canvas {
+  position: absolute;
+  height: 100vh;
+  width: 100%;
+}
