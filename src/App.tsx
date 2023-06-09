@@ -5,7 +5,8 @@ import axios from 'axios';
 import confetti from 'canvas-confetti'
 
 interface Data {
-  dayScore: [number, number]
+  morningScore: [number, number],
+  afternoonScore: [number, number],
   nightScore: [number, number],
   sky: string,
   liftsOpen: string,
@@ -20,8 +21,8 @@ interface Props {
 interface State {
   data: Data | null,
   infoString: string,
+  error: string | null
 }
-
 
 export default class App extends Component<Props, State> {
 
@@ -30,7 +31,8 @@ export default class App extends Component<Props, State> {
 
     this.state = {
       data: null,
-      infoString: ''
+      infoString: '',
+      error: null
     }
   }
 
@@ -39,20 +41,34 @@ export default class App extends Component<Props, State> {
       .get('http://localhost:4000')
       .then((result) => {
         this.setState({
-          data: result.data as Data
+          data: result.data as Data,
+          error: null
         })
+      }) 
+      .catch((error) => {
+        if (error.code === 'ERR_NETWORK') {
+          this.setState({
+            error: 'Error Fetching Data'
+          })
+        } else {
+          if (error.response.status === 425) {
+            this.setState({
+              error: 'Data Hasn`t Loaded Yet'
+            })
+          } else {
+            this.setState({
+              error: 'Unknown Error'
+            })
+          } 
+        }
       })
-
-
-
   }
   
   getBackgroundColor (aScore: [number, number], sky: string): string {
     if (aScore[0] === 5 && aScore[1] === 5 && (sky.includes('clear') || sky.includes('sunny'))) {
       return '#64db51';
     }
-
-    const score: number = Math.round(((aScore[0] + aScore[1]) / 10) * 5)
+    const score: number = Math.floor(((aScore[0] + aScore[1]) / 10) * 5)
     if (score === 1) {
       return '#fe9f7f'
     } else if (score === 2) {
@@ -77,7 +93,7 @@ export default class App extends Component<Props, State> {
     if (aScore[0] === -1) {
       score = -1
     } else {
-      score = Math.round(((aScore[0] + aScore[1])/10)*5)
+      score = Math.floor(((aScore[0] + aScore[1])/10)*5)
     }
 
     // main reponse
@@ -114,7 +130,7 @@ export default class App extends Component<Props, State> {
     } else if (aScore[0] <= 2) {
       output.push('gonna be windy');
     } else if (aScore[0] <= 3) {
-      output.push('looking to be a bit windy');
+      output.push('gonna be a bit windy');
     } 
 
     // sky
@@ -137,50 +153,60 @@ export default class App extends Component<Props, State> {
   }
 
   render () {
-    
-      const { data } = this.state;
+    const { data, error } = this.state;
 
-      const dayScore: [number, number] = data?.dayScore!;
-      const nightScore: [number, number] = data?.nightScore!;
-      const sky: string = data?.sky!;
+    const morningScore: [number, number] = data?.morningScore!;
+    const afternoonScore: [number, number] = data?.afternoonScore!;
+    const nightScore: [number, number] = data?.nightScore!;
 
+    const sky: string = data?.sky!;
 
-      if (data) {
-        return (  
-          <div 
-            className="App"
-            style={{ backgroundColor: `${this.getBackgroundColor(dayScore, sky)}`}}
-          >
-            <canvas></canvas>
-            <div className='messege-container'>
-              <div>
-                <span
-                  style={{ color: `${this.getBackgroundColor(dayScore, sky)}`}}
-                >
-                  { this.generateTitle(dayScore, sky) }
-                </span>
+    if (error) {
+      return (  
+        <div 
+          className="App"
+        >
+          <div className='messege-container'>
+            <span>
+              { error }
+            </span>
+          </div>
+        </div>
+      )
+    }
 
-              </div>
-              <div>
-                <span
-                  style={{ color: `${this.getBackgroundColor(dayScore, sky)}`}}
-                  className='sub'
-                >
-                  { this.generateSub(dayScore, sky) }
-                </span>
-              </div>
+    if (data) {
+      return (  
+        <div 
+          className="App"
+          style={{ backgroundColor: `${this.getBackgroundColor(afternoonScore, sky)}`}}
+        >
+          <div className='messege-container'>
+            <div>
+              <span
+                style={{ color: `${this.getBackgroundColor(afternoonScore, sky)}`}}
+              >
+                { this.generateTitle(afternoonScore, sky) }
+              </span>
             </div>
-            
+            <div>
+              <span
+                style={{ color: `${this.getBackgroundColor(afternoonScore, sky)}`}}
+                className='sub'
+              >
+                { this.generateSub(afternoonScore, sky) }
+              </span>
+            </div>
           </div>
-        )
-      } else {
-        return (  
-          <div 
-            className="App"
-          >
-          </div>
-        )
-      }
-
+        </div>
+      )
+    } else {
+      return (  
+        <div 
+          className="App"
+        >
+        </div>
+      )
+    }
   } 
 }
